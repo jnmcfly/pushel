@@ -1,0 +1,7 @@
+{
+  "listen_address": "127.0.0.1",
+  "port": 3030,
+  "webserver_enabled": true,
+  "default_title": "Erinnerung",
+  "log_format": "pretty"
+}

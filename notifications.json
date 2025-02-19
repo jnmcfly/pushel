@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Erinnerung",
+    "message": "Trink Wasser!",
+    "interval": "1h"
+  },
+  {
+    "title": "Erinnerung",
+    "message": "Mach mal Pause und strecke dich!",
+    "interval": "2h"
+  },
+  {
+    "title": "Erinnerung",
+    "message": "Schau in die Ferne, um deine Augen zu entspannen!",
+    "interval": "30m"
+  },
+  {
+    "title": "Erinnerung",
+    "message": "Stehe auf und gehe ein paar Schritte!",
+    "interval": "1h"
+  },
+  {
+    "title": "Erinnerung",
+    "message": "Überprüfe deine Sitzhaltung!",
+    "interval": "45m"
+  }
+]
