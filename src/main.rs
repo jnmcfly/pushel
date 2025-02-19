@@ -66,7 +66,7 @@ fn send_notification(title: &str, message: &str) {
 fn create_default_files(config_dir: &PathBuf) -> std::io::Result<()> {
     let default_config = r#"
     {
-      "listen_address": "127.0.0.1",
+      "listen_address": "0.0.0.0",
       "port": 3030,
       "webserver_enabled": true,
       "default_title": "Erinnerung",

@@ -1,5 +1,7 @@
 # Pushel
 
+<img src="./pushel.webp" style="width:300px"/>
+
 Pushel is a simple reminder application that sends desktop notifications at specified intervals. It also includes a web server to handle API requests for sending ad-hoc notifications.
 
 ## Features
