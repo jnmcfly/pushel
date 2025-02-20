@@ -2,26 +2,56 @@
   {
     "title": "Erinnerung",
     "message": "Trink Wasser!",
-    "interval": "1h"
+    "interval": "1h",
+    "urgency": "low",
+    "expire_time": 5000,
+    "app_name": "Pushel",
+    "icon": "dialog-information",
+    "category": "reminder",
+    "transient": true
   },
   {
     "title": "Erinnerung",
     "message": "Mach mal Pause und strecke dich!",
-    "interval": "2h"
+    "interval": "2h",
+    "urgency": "normal",
+    "expire_time": 5000,
+    "app_name": "Pushel",
+    "icon": "dialog-information",
+    "category": "reminder",
+    "transient": true
   },
   {
     "title": "Erinnerung",
     "message": "Schau in die Ferne, um deine Augen zu entspannen!",
-    "interval": "30m"
+    "interval": "30m",
+    "urgency": "low",
+    "expire_time": 5000,
+    "app_name": "Pushel",
+    "icon": "dialog-information",
+    "category": "reminder",
+    "transient": true
   },
   {
     "title": "Erinnerung",
     "message": "Stehe auf und gehe ein paar Schritte!",
-    "interval": "1h"
+    "interval": "1h",
+    "urgency": "normal",
+    "expire_time": 5000,
+    "app_name": "Pushel",
+    "icon": "dialog-information",
+    "category": "reminder",
+    "transient": true
   },
   {
     "title": "Erinnerung",
     "message": "Überprüfe deine Sitzhaltung!",
-    "interval": "45m"
+    "interval": "45m",
+    "urgency": "low",
+    "expire_time": 5000,
+    "app_name": "Pushel",
+    "icon": "dialog-information",
+    "category": "reminder",
+    "transient": true
   }
 ]

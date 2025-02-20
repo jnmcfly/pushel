@@ -10,6 +10,7 @@ Pushel is a simple reminder application that sends desktop notifications at spec
 - Configurable via JSON files.
 - Web server to handle API requests for ad-hoc notifications.
 - Configurable logging format (pretty or JSON).
+- Support for additional notification options: urgency, expire-time, app-name, icon, category, and transient.
 
 ## Installation
 
@@ -40,7 +41,7 @@ Pushel uses two configuration files located in the standard Linux configuration 
 
 ```json
 {
-  "listen_address": "127.0.0.1",
+  "listen_address": "0.0.0.0",
   "port": 3030,
   "webserver_enabled": true,
   "default_title": "Erinnerung",
@@ -55,27 +56,13 @@ Pushel uses two configuration files located in the standard Linux configuration 
   {
     "title": "Erinnerung",
     "message": "Trink Wasser!",
-    "interval": "1h"
-  },
-  {
-    "title": "Erinnerung",
-    "message": "Mach mal Pause und strecke dich!",
-    "interval": "2h"
-  },
-  {
-    "title": "Erinnerung",
-    "message": "Schau in die Ferne, um deine Augen zu entspannen!",
-    "interval": "30m"
-  },
-  {
-    "title": "Erinnerung",
-    "message": "Stehe auf und gehe ein paar Schritte!",
-    "interval": "1h"
-  },
-  {
-    "title": "Erinnerung",
-    "message": "Überprüfe deine Sitzhaltung!",
-    "interval": "45m"
+    "interval": "1h",
+    "urgency": "low",
+    "expire_time": 5000,
+    "app_name": "Pushel",
+    "icon": "dialog-information",
+    "category": "reminder",
+    "transient": true
   }
 ]
 ```
@@ -91,7 +78,13 @@ To send an ad-hoc notification, send a POST request to `http://127.0.0.1:3030/ap
 ```json
 {
   "title": "Optionaler Titel",
-  "message": "Die Nachricht, die angezeigt werden soll"
+  "message": "Die Nachricht, die angezeigt werden soll",
+  "urgency": "normal",
+  "expire_time": 5000,
+  "app_name": "Pushel",
+  "icon": "dialog-information",
+  "category": "reminder",
+  "transient": true
 }
 ```
 
@@ -102,7 +95,13 @@ curl -X POST http://127.0.0.1:3030/api/v1/notify \
      -H "Content-Type: application/json" \
      -d '{
            "title": "Optionaler Titel",
-           "message": "Die Nachricht, die angezeigt werden soll"
+           "message": "Die Nachricht, die angezeigt werden soll",
+           "urgency": "normal",
+           "expire_time": 5000,
+           "app_name": "Pushel",
+           "icon": "dialog-information",
+           "category": "reminder",
+           "transient": true
          }'
 ```
 
@@ -114,7 +113,7 @@ Pushel supports two logging formats: `pretty` and `json`. The logging format can
 
 ```json
 {
-  "listen_address": "127.0.0.1",
+  "listen_address": "0.0.0.0",
   "port": 3030,
   "webserver_enabled": true,
   "default_title": "Erinnerung",
