@@ -24,7 +24,7 @@ jobs:
         run: cargo build --release
 
       - name: Upload release artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: pushel
           path: target/release/pushel
@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Download release artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.8
         with:
           name: pushel
           path: .
@@ -54,7 +54,7 @@ jobs:
           custom_tag: ${{ steps.tag_version.outputs.new_tag }}
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2.2.1
         with:
           files: pushel
         env:
