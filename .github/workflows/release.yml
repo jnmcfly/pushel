@@ -54,7 +54,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           release_branches: main
-          custom_tag: ${{ steps.tag_version.outputs.new_tag }}
+          tag_prefix: ""
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2.2.1
