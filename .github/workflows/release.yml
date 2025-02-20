@@ -52,19 +52,25 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Bump version and create tag
+      - name: set tag
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          release_branches: main
+          release_branches: main,stage
+          create_annotated_tag: true
           tag_prefix: ""
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2.2.1
+      - name: genereate name
+        id: fancy_name
+        run: |
+          arr1=(blubbering bamboozled bewildered boisterous bumbling cantankerous clumsy catawampus cockamamie conniptious discombobulated doozy dunderheaded flabbergasted floofy frabjous frolicking gobsmacked gorgonzolic gubbins higgledy-piggledy hootenanny hubbub kerfuffled lollapalooza loony ludicrous mollycoddled nincompoop noodly ornery persnickety perplexed poppycock quizzacious rambunctious razzle-dazzle rollicking shenanigating slap-happy snickerdoodly splendiferous sproingy stonked swashbuckling thunderstruck topsy-turvy topsy-tastical twaddle wibbly-wobbly whatchamacallit wonky wuzzlefied zigzaggy zany zoomy zoodlebrained)
+          arr2=(alfonsine bamboozlebert bonkersworth bumbleflap cabbagepants diddlywomp dingleberry doohickey fiddlesticks flibberflop flimflammer gibberton higgledypop hootenschnitz jibberjabber klonkendorf lollipopski lumpybutter mctootles muddlethump noodlewhack oodlesnoot pumpernickel quackenbush razzmatazz scallywomp schnozzberry schnuffelwuff sizzletrousers skedaddleton sploofenheimer sproingeldorf taterblimp thistlebottom tiddlywink toejamington twiddlefizz wackadoodle whippersnap wobblebottom wumpalump zambonius zoodlefrump zorpington)
+          echo "release_name=${arr1[RANDOM%${#arr1[@]}]}-${arr2[RANDOM%${#arr2[@]}]}" >> $GITHUB_OUTPUT
+
+      - name: release
+        uses: ncipollo/release-action@v1.14.0
         with:
-          files: pushel
-          tag_name: ${{ steps.tag_version.outputs.tag }}
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          name: ${{ steps.tag_version.outputs.new_tag }} - ${{ steps.fancy_name.outputs.release_name }}
+          body: ${{ steps.tag_version.outputs.changelog }}

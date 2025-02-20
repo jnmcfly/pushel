@@ -16,7 +16,7 @@ use tracing_subscriber;
 struct NotificationConfig {
     title: Option<String>,
     message: String,
-    interval: String, // Zeit als String mit Suffix
+    interval: String,
     urgency: Option<String>,
     expire_time: Option<u32>,
     app_name: Option<String>,
@@ -109,7 +109,7 @@ fn create_default_files(config_dir: &PathBuf) -> std::io::Result<()> {
       {
         "title": "Erinnerung",
         "message": "Trink Wasser!",
-        "interval": "1h",
+        "interval": "30m",
         "urgency": "low",
         "expire_time": 5000,
         "app_name": "Pushel",
@@ -131,7 +131,7 @@ fn create_default_files(config_dir: &PathBuf) -> std::io::Result<()> {
       {
         "title": "Erinnerung",
         "message": "Schau in die Ferne, um deine Augen zu entspannen!",
-        "interval": "30m",
+        "interval": "40m",
         "urgency": "low",
         "expire_time": 5000,
         "app_name": "Pushel",
@@ -153,7 +153,7 @@ fn create_default_files(config_dir: &PathBuf) -> std::io::Result<()> {
       {
         "title": "Erinnerung",
         "message": "Überprüfe deine Sitzhaltung!",
-        "interval": "45m",
+        "interval": "15m",
         "urgency": "low",
         "expire_time": 5000,
         "app_name": "Pushel",
