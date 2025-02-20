@@ -42,7 +42,6 @@ struct AppConfig {
     listen_address: String,
     port: u16,
     webserver_enabled: bool,
-    default_title: String,
     log_format: String,
 }
 

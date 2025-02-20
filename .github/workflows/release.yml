@@ -64,5 +64,7 @@ jobs:
         uses: softprops/action-gh-release@v2.2.1
         with:
           files: pushel
+          tag_name: ${{ steps.tag_version.outputs.tag }}
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
