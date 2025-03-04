@@ -249,7 +249,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Simulate motion detection
     motion_tracker.update_motion();
 
-    // Für jede Benachrichtigung einen eigenen Thread starten
     for notif in notifications {
         let interval = parse_interval(&notif.interval)?;
         let motion_tracker_clone = motion_tracker.clone();
