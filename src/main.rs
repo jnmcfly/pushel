@@ -66,6 +66,14 @@ impl MotionTracker {
     }
 }
 
+impl Clone for MotionTracker {
+    fn clone(&self) -> Self {
+        MotionTracker {
+            last_motion: self.last_motion,
+        }
+    }
+}
+
 fn parse_interval(interval: &str) -> Result<u64, &'static str> {
     let len = interval.len();
     if len < 2 {
@@ -244,12 +252,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Für jede Benachrichtigung einen eigenen Thread starten
     for notif in notifications {
         let interval = parse_interval(&notif.interval)?;
+        let motion_tracker_clone = motion_tracker.clone();
 
         thread::spawn(move || {
             // Warte das angegebene Intervall vor der ersten Benachrichtigung
             thread::sleep(Duration::from_secs(interval));
             loop {
-                if motion_tracker.should_notify() {
+                if motion_tracker_clone.should_notify() {
                     send_notification(&notif);
                     info!("Motion detected within the last 15 minutes. Sending notification...");
                 } else {
