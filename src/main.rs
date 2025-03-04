@@ -5,7 +5,7 @@ use std::{
     io::Write,
     process::Command,
     thread,
-    time::Duration,
+    time::{Duration, Instant},
     path::PathBuf,
 };
 use warp::Filter;
@@ -43,6 +43,27 @@ struct AppConfig {
     port: u16,
     webserver_enabled: bool,
     log_format: String,
+}
+
+struct MotionTracker {
+    last_motion: Option<Instant>,
+}
+
+impl MotionTracker {
+    fn new() -> Self {
+        MotionTracker { last_motion: None }
+    }
+
+    fn update_motion(&mut self) {
+        self.last_motion = Some(Instant::now());
+    }
+
+    fn should_notify(&self) -> bool {
+        if let Some(last_motion) = self.last_motion {
+            return Instant::now().duration_since(last_motion) <= Duration::from_secs(15 * 60);
+        }
+        false
+    }
 }
 
 fn parse_interval(interval: &str) -> Result<u64, &'static str> {
@@ -215,6 +236,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Benachrichtigungsdatei geladen: {:?}", notifications_path);
 
+    let mut motion_tracker = MotionTracker::new();
+
+    // Simulate motion detection
+    motion_tracker.update_motion();
+
     // Für jede Benachrichtigung einen eigenen Thread starten
     for notif in notifications {
         let interval = parse_interval(&notif.interval)?;
@@ -223,7 +249,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Warte das angegebene Intervall vor der ersten Benachrichtigung
             thread::sleep(Duration::from_secs(interval));
             loop {
-                send_notification(&notif);
+                if motion_tracker.should_notify() {
+                    send_notification(&notif);
+                    info!("Motion detected within the last 15 minutes. Sending notification...");
+                } else {
+                    info!("No motion detected within the last 15 minutes. No notification sent.");
+                }
                 thread::sleep(Duration::from_secs(interval));
             }
         });
