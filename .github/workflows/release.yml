@@ -61,7 +61,7 @@ jobs:
           release_branches: main,stage
           create_annotated_tag: true
           tag_prefix: ""
-          pre_release_branches: feat**
+          pre_release_branches: feat.*
 
       - name: genereate name
         id: fancy_name
