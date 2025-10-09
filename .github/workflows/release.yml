@@ -10,6 +10,7 @@ on:
       - "src/**"
       - "Cargo.toml"
       - "Cargo.lock"
+      - ".github/workflows/**"
 
 jobs:
   build:
@@ -25,6 +26,11 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxss-dev libxext-dev
 
       - name: Build project
         run: cargo build --release
