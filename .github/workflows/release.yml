@@ -1,13 +1,16 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
+      - feat**
     paths:
       - "src/**"
       - "Cargo.toml"
       - "Cargo.lock"
+      - ".github/workflows/**"
 
 jobs:
   build:
@@ -23,6 +26,11 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxss-dev libxext-dev
 
       - name: Build project
         run: cargo build --release
@@ -60,6 +68,7 @@ jobs:
           release_branches: main,stage
           create_annotated_tag: true
           tag_prefix: ""
+          pre_release_branches: feat.*
 
       - name: genereate name
         id: fancy_name
