@@ -4,13 +4,15 @@ use std::{
     fs::File,
     io::Write,
     process::Command,
+    sync::{Arc, Mutex},
     thread,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
     path::PathBuf,
 };
 use warp::Filter;
-use tracing::{info, error};
+use tracing::{info, error, debug};
 use tracing_subscriber;
+use user_idle::UserIdle;
 
 #[derive(Debug, Deserialize)]
 struct NotificationConfig {
@@ -43,35 +45,118 @@ struct AppConfig {
     port: u16,
     webserver_enabled: bool,
     log_format: String,
+    homeassistant_url: Option<String>,
+    homeassistant_api_key: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+enum MotionStatus {
+    Active,
+    Inactive,
+}
+
+impl MotionStatus {
+    fn as_str(&self) -> &str {
+        match self {
+            MotionStatus::Active => "active",
+            MotionStatus::Inactive => "inactive",
+        }
+    }
 }
 
 struct MotionTracker {
-    last_motion: Option<Instant>,
+    last_motion: Arc<Mutex<Option<Instant>>>,
+    current_status: Arc<Mutex<MotionStatus>>,
+    runtime_handle: tokio::runtime::Handle,
 }
 
 impl MotionTracker {
-    fn new() -> Self {
-        MotionTracker { last_motion: None }
+    fn new(runtime_handle: tokio::runtime::Handle) -> Self {
+        MotionTracker {
+            last_motion: Arc::new(Mutex::new(None)),
+            current_status: Arc::new(Mutex::new(MotionStatus::Inactive)),
+            runtime_handle,
+        }
     }
 
-    fn update_motion(&mut self) {
-        self.last_motion = Some(Instant::now());
+    fn update_motion(&self) {
+        if let Ok(mut last_motion) = self.last_motion.lock() {
+            *last_motion = Some(Instant::now());
+        }
     }
 
     fn should_notify(&self) -> bool {
-        if let Some(last_motion) = self.last_motion {
-            return Instant::now().duration_since(last_motion) <= Duration::from_secs(15 * 60);
+        if let Ok(last_motion) = self.last_motion.lock() {
+            if let Some(last_motion_time) = *last_motion {
+                return Instant::now().duration_since(last_motion_time) <= Duration::from_secs(15 * 60);
+            }
         }
         false
+    }
+
+    fn update_status(&self, new_status: MotionStatus, ha_url: Option<&str>, ha_api_key: Option<&str>) {
+        if let Ok(mut current_status) = self.current_status.lock() {
+            if *current_status != new_status {
+                info!("Motion status changed: {:?} -> {:?}", *current_status, new_status);
+                *current_status = new_status;
+
+                // Push to Home Assistant if configured
+                if let (Some(url), Some(api_key)) = (ha_url, ha_api_key) {
+                    let url = url.to_string();
+                    let api_key = api_key.to_string();
+                    self.runtime_handle.spawn(async move {
+                        if let Err(e) = push_to_homeassistant(&url, &api_key, new_status).await {
+                            error!("Failed to push status to Home Assistant: {}", e);
+                        }
+                    });
+                }
+            }
+        }
     }
 }
 
 impl Clone for MotionTracker {
     fn clone(&self) -> Self {
         MotionTracker {
-            last_motion: self.last_motion,
+            last_motion: Arc::clone(&self.last_motion),
+            current_status: Arc::clone(&self.current_status),
+            runtime_handle: self.runtime_handle.clone(),
         }
     }
+}
+
+async fn push_to_homeassistant(base_url: &str, api_key: &str, status: MotionStatus) -> Result<(), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+    let url = format!("{}/api/states/sensor.pushel_motion", base_url.trim_end_matches('/'));
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)?
+        .as_secs();
+
+    let body = serde_json::json!({
+        "state": status.as_str(),
+        "attributes": {
+            "friendly_name": "Pushel Motion Detection",
+            "last_update": timestamp,
+            "device_class": "motion"
+        }
+    });
+
+    let response = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await?;
+
+    if response.status().is_success() {
+        info!("Successfully pushed motion status to Home Assistant: {}", status.as_str());
+    } else {
+        error!("Failed to push to Home Assistant. Status: {}, Response: {:?}", response.status(), response.text().await?);
+    }
+
+    Ok(())
 }
 
 fn parse_interval(interval: &str) -> Result<u64, &'static str> {
@@ -129,7 +214,9 @@ fn create_default_files(config_dir: &PathBuf) -> std::io::Result<()> {
       "port": 3030,
       "webserver_enabled": true,
       "default_title": "Erinnerung",
-      "log_format": "pretty"
+      "log_format": "pretty",
+      "homeassistant_url": null,
+      "homeassistant_api_key": null
     }
     "#;
 
@@ -244,10 +331,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Benachrichtigungsdatei geladen: {:?}", notifications_path);
 
-    let mut motion_tracker = MotionTracker::new();
+    let motion_tracker = MotionTracker::new(tokio::runtime::Handle::current());
 
-    // Simulate motion detection
-    motion_tracker.update_motion();
+    // Starte idle detection thread
+    let motion_tracker_idle = motion_tracker.clone();
+    let ha_url = app_config.homeassistant_url.clone();
+    let ha_api_key = app_config.homeassistant_api_key.clone();
+
+    thread::spawn(move || {
+        info!("Idle detection thread gestartet");
+        loop {
+            match UserIdle::get_time() {
+                Ok(idle) => {
+                    let idle_seconds = idle.as_seconds();
+                    // Wenn User aktiv ist (idle < 10 Sekunden), update motion
+                    if idle_seconds < 10 {
+                        motion_tracker_idle.update_motion();
+                        motion_tracker_idle.update_status(
+                            MotionStatus::Active,
+                            ha_url.as_deref(),
+                            ha_api_key.as_deref()
+                        );
+                        debug!("User ist aktiv (idle: {}s)", idle_seconds);
+                    } else {
+                        motion_tracker_idle.update_status(
+                            MotionStatus::Inactive,
+                            ha_url.as_deref(),
+                            ha_api_key.as_deref()
+                        );
+                        info!("User ist idle ({}s)", idle_seconds);
+                    }
+                }
+                Err(e) => {
+                    error!("Fehler beim Abrufen der Idle-Zeit: {}", e);
+                }
+            }
+            // Prüfe alle 10 Sekunden
+            thread::sleep(Duration::from_secs(10));
+        }
+    });
 
     for notif in notifications {
         let interval = parse_interval(&notif.interval)?;
