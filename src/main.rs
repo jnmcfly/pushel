@@ -295,6 +295,11 @@ fn create_default_files(config_dir: &PathBuf) -> std::io::Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize X11 for thread-safe operation
+    unsafe {
+        x11::xlib::XInitThreads();
+    }
+
     // Bestimme den Pfad zur Konfigurationsdatei im Standard-Linux-Konfigurationsverzeichnis
     let config_dir = std::env::var("XDG_CONFIG_HOME")
         .map(PathBuf::from)
