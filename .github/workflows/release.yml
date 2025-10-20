@@ -83,3 +83,4 @@ jobs:
           tag: ${{ steps.tag_version.outputs.new_tag }}
           name: ${{ steps.tag_version.outputs.new_tag }} - ${{ steps.fancy_name.outputs.release_name }}
           body: ${{ steps.tag_version.outputs.changelog }}
+          prerelease: ${{ startsWith(github.ref, 'refs/heads/feat') }}
