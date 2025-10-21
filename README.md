@@ -11,6 +11,8 @@ Pushel is a simple reminder application that sends desktop notifications at spec
 - Web server to handle API requests for ad-hoc notifications.
 - Configurable logging format (pretty or JSON).
 - Support for additional notification options: urgency, expire-time, app-name, icon, category, and transient.
+- Motion detection to prevent notifications when user is away.
+- Home Assistant integration to report user activity status.
 
 ## Installation
 
@@ -45,9 +47,13 @@ Pushel uses two configuration files located in the standard Linux configuration 
   "port": 3030,
   "webserver_enabled": true,
   "default_title": "Erinnerung",
-  "log_format": "pretty"
+  "log_format": "pretty",
+  "homeassistant_url": null,
+  "homeassistant_api_key": null
 }
 ```
+
+**Note**: Set `homeassistant_url` and `homeassistant_api_key` to `null` if you don't want to use Home Assistant integration.
 
 ### Example `notifications.json`
 
@@ -120,6 +126,79 @@ Pushel supports two logging formats: `pretty` and `json`. The logging format can
   "log_format": "json"
 }
 ```
+
+## Home Assistant Integration
+
+Pushel can integrate with Home Assistant to report user activity status. When configured, Pushel will automatically create and update a motion sensor in Home Assistant that tracks whether the user is active or inactive at their computer.
+
+### Configuration
+
+To enable Home Assistant integration, add the following fields to your `config.json`:
+
+```json
+{
+  "listen_address": "0.0.0.0",
+  "port": 3030,
+  "webserver_enabled": true,
+  "default_title": "Erinnerung",
+  "log_format": "pretty",
+  "homeassistant_url": "http://your-homeassistant-instance:8123",
+  "homeassistant_api_key": "your-long-lived-access-token"
+}
+```
+
+### Parameters
+
+- **homeassistant_url**: The base URL of your Home Assistant instance (e.g., `http://192.168.1.100:8123` or `https://homeassistant.local`)
+- **homeassistant_api_key**: A long-lived access token from Home Assistant. You can create one in Home Assistant under Profile → Security → Long-Lived Access Tokens.
+
+### Home Assistant Sensor
+
+Once configured, Pushel will create and update a sensor entity in Home Assistant:
+
+- **Entity ID**: `sensor.pushel_motion`
+- **Friendly Name**: Pushel Motion Detection
+- **Device Class**: motion
+- **States**:
+  - `active`: User is actively using the computer (idle time < 10 seconds)
+  - `inactive`: User is idle (idle time ≥ 10 seconds)
+
+The sensor includes an attribute `last_update` with a timestamp of the last status change.
+
+### Usage in Home Assistant
+
+You can use this sensor in your Home Assistant automations, scripts, or dashboards. For example:
+
+#### Example Automation
+
+```yaml
+automation:
+  - alias: "Pause notifications when user is away"
+    trigger:
+      - platform: state
+        entity_id: sensor.pushel_motion
+        to: 'inactive'
+        for: '00:05:00'
+    action:
+      - service: notify.mobile_app
+        data:
+          message: "User has been away for 5 minutes"
+```
+
+#### Example Dashboard Card
+
+```yaml
+type: entity
+entity: sensor.pushel_motion
+name: Computer Activity
+```
+
+### Troubleshooting
+
+- Ensure your Home Assistant instance is accessible from the machine running Pushel
+- Verify your long-lived access token is valid and has not expired
+- Check Pushel logs for any connection errors to Home Assistant
+- The motion status updates occur every 10 seconds based on user idle time
 
 ## License
 
