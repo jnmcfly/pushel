@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6.0.1
 
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6.0.1
 
       - name: Download release artifact
         uses: actions/download-artifact@v5.0.0
