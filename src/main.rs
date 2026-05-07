@@ -1,3 +1,6 @@
+mod tui;
+
+use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -14,8 +17,15 @@ use tracing::{info, error, debug};
 use tracing_subscriber;
 use user_idle::UserIdle;
 
+#[derive(Parser)]
+#[command(name = "pushel", about = "Desktop notification reminder")]
+struct Cli {
+    #[arg(short, long, help = "Launch TUI notification manager")]
+    tui: bool,
+}
+
 #[derive(Debug, Deserialize)]
-struct NotificationConfig {
+pub(crate) struct NotificationConfig {
     title: Option<String>,
     message: String,
     interval: String,
@@ -300,7 +310,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         x11::xlib::XInitThreads();
     }
 
-    // Bestimme den Pfad zur Konfigurationsdatei im Standard-Linux-Konfigurationsverzeichnis
+    let cli = Cli::parse();
     let config_dir = std::env::var("XDG_CONFIG_HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|_| {
@@ -309,7 +319,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             path
         }).join("pushel");
 
-    // Prüfe, ob der Konfigurationsordner existiert, und erstelle ihn bei Bedarf
+    if cli.tui {
+        if !config_dir.exists() {
+            create_default_files(&config_dir)?;
+        }
+        let notifications_path = config_dir.join("notifications.json");
+        tui::run_tui(notifications_path)?;
+        return Ok(());
+    }
+
     if !config_dir.exists() {
         info!("Erstelle Standardkonfigurationsdateien...");
         create_default_files(&config_dir)?;
