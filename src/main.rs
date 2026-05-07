@@ -796,11 +796,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             address, app_config.port
         );
 
-        let (_, server) = warp::serve(push).bind_with_graceful_shutdown(socket_addr, async {
-            tokio::signal::ctrl_c().await.ok();
-            info!("Signal zum Beenden empfangen, fahre Webserver herunter...");
-        });
-        server.await;
+        let server = warp::serve(push).bind(socket_addr).await;
+        server
+            .graceful(async {
+                tokio::signal::ctrl_c().await.ok();
+                info!("Signal zum Beenden empfangen, fahre Webserver herunter...");
+            })
+            .run()
+            .await;
     } else {
         info!("Webserver deaktiviert. Programm läuft (Ctrl+C zum Beenden)...");
         tokio::signal::ctrl_c().await.ok();
